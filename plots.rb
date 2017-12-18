@@ -65,7 +65,7 @@ def data_frame(name, data)
   "#{name} = data.frame(#{data})"
 end
 
-def graph_single(name, title, unit, data)
+def plot_single(name, title, unit, data)
   frame = data_frame("frame", data)
   names = data.map { |x| x[0] }
   input = %Q{
@@ -78,7 +78,7 @@ labs(title="#{title}")
 }
 end
 
-def graph_double(name, title, unit, data, scale)
+def plot_double(name, title, unit, data, scale)
   frame = data_frame("frame", data)
   names = data.map { |x| x[0] }
   input = %Q{
@@ -92,7 +92,7 @@ frame_melt <- melt(frame, id="#{names[0]}")
 }
 end
 
-def graph_save(data, file)
+def plot_save(data, file)
   input = %Q{
 #{data}
 ggarrange(iotop,
@@ -119,11 +119,11 @@ def plots(test_case)
       db_cache_size_test_case = "#{test_case}/#{db_cache_size}MB"
 
       plot =
-	graph_single("du", "DB Size", "MB", parse_du("logs/#{db_cache_size_test_case}/du-#{test}")) +
-	graph_double("iotop", "IO", "MB/s", parse_iotop("logs/#{db_cache_size_test_case}/iotop-#{test}"), 15) +
-	graph_double("ps", "CPU/MEM", "%", parse_ps("logs/#{db_cache_size_test_case}/ps-#{test}"), 5)
+	plot_single("du", "DB Size", "MB", parse_du("logs/#{db_cache_size_test_case}/du-#{test}")) +
+	plot_double("iotop", "IO", "MB/s", parse_iotop("logs/#{db_cache_size_test_case}/iotop-#{test}"), 15) +
+	plot_double("ps", "CPU/MEM", "%", parse_ps("logs/#{db_cache_size_test_case}/ps-#{test}"), 5)
 
-      graph_save(plot, "plots/#{test_case}-#{db_cache_size}MB-#{test}")
+      plot_save(plot, "plots/#{test_case}-#{db_cache_size}MB-#{test}")
     end
   end
 end
