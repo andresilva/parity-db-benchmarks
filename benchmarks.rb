@@ -7,7 +7,6 @@ LINUX = false
 
 def repeat(cmd, interval)
   spawn("while :; do sleep #{interval} & #{cmd}; wait; done;", :out => "/dev/null", :err => "/dev/null")
-  # spawn("watch -n #{interval} -p -t '#{cmd}'", :out => "/dev/null", :err => "/dev/null")
 end
 
 def benchmark_import(test_case, db_cache_size)
@@ -130,8 +129,6 @@ end
 def benchmarks(test_case)
   benchmark(test_case, 'restore')
   benchmark(test_case, 'import')
-  # benchmark(test_case, 'sync')
-  # benchmark(test_case, 'sync-archive')
 end
 
 Signal.trap("INT") { shutdown; exit }
