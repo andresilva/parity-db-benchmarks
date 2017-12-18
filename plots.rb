@@ -1,3 +1,4 @@
+require 'erb'
 require 'rserve'
 
 LINUX = true
@@ -42,9 +43,12 @@ def parse_iotop(file)
   ]
 end
 
+_rserve = nil
 def r_eval(cmd)
-  print cmd
-  rserve = Rserve::Connection.new
+  # print cmd
+
+  _rserve ||= Rserve::Connection.new
+  rserve = _rserve
   rserve.eval("setwd('#{`pwd`.strip}')")
   palette = %Q{
 library(reshape2)
@@ -98,24 +102,48 @@ def plot_save(data, file)
 ggarrange(iotop,
   ggarrange(du, ps, ncol = 2),
   nrow = 2)
-ggsave('#{file}.pdf')
+ggsave('#{file}.png')
 }
   print input
   r_eval(input)
 end
 
-def plots(test_case)
-  db_cache_sizes = [
-    128,
-    256,
-    512,
-    1024
-  ]
+class ERBContext
+  def initialize(hash)
+    hash.each_pair do |key, value|
+      instance_variable_set('@' + key.to_s, value)
+    end
+  end
 
-  tests = ['restore', 'import']
+  def get_binding
+    binding
+  end
+end
 
-  tests.each do |test|
-    db_cache_sizes.each do |db_cache_size|
+def plot_html(test_cases)
+  TESTS.each do |test|
+    DB_CACHE_SIZES.each do |db_cache_size|
+      test_cases.each do |test_case|
+        plot = "plots/#{test_case}-#{db_cache_size}MB-#{test}"
+      end
+    end
+  end
+
+  context = ERBContext.new(
+    {
+      'tests' => TESTS,
+      'db_cache_sizes' => DB_CACHE_SIZES,
+      'test_cases' => test_cases
+    })
+
+  template = ERB.new(File.open('plots.html.erb').read)
+
+  File.write('plots.html', template.result(context.get_binding))
+end
+
+def plot_test_case(test_case)
+  TESTS.each do |test|
+    DB_CACHE_SIZES.each do |db_cache_size|
       db_cache_size_test_case = "#{test_case}/#{db_cache_size}MB"
 
       plot =
@@ -128,6 +156,15 @@ def plots(test_case)
   end
 end
 
+DB_CACHE_SIZES = [
+  128,
+  256,
+  512,
+  1024
+]
+
+TESTS = ['restore', 'import']
+
 BENCHMARKS = [
   'rocksdb5-tuning2',
   'rocksdb5-tuning',
@@ -137,5 +174,7 @@ BENCHMARKS = [
 
 BENCHMARKS.each do |test_case|
   puts "Generating plots for test case #{test_case}."
-  plots(test_case)
+  plot_test_case(test_case)
 end
+
+plot_html(BENCHMARKS)
